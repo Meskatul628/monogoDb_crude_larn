@@ -15,8 +15,17 @@
     "body-parser": "^2.3.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
     "nodemon": "^3.1.14",
     "uuid": "^14.0.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Meskatul628/monogoDb_crude_larn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Meskatul628/monogoDb_crude_larn/issues"
+  },
+  "homepage": "https://github.com/Meskatul628/monogoDb_crude_larn#readme"
 }

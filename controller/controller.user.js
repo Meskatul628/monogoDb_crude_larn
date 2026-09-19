@@ -1,4 +1,5 @@
 const User = require("../model/model.user");
+const jwt = require("jsonwebtoken");
 
 // 1. GET ALL USERS (Read all)
 const getAllUser = async (req, res) => {
@@ -100,10 +101,68 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// 6. LOGIN USER (Authentication)
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // ১. ইমেইল এবং পাসওয়ার্ড রিকোয়েস্টে দেওয়া হয়েছে কিনা যাচাই
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email and password are required",
+      });
+    }
+
+    // ২. ডেটাবেজে এই ইমেইল দিয়ে ইউজার আছে কিনা চেক
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found with this email",
+      });
+    }
+
+    // ৩. পাসওয়ার্ড মিলছে কিনা যাচাই
+    if (user.password !== password) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid password",
+      });
+    }
+
+    // ৪. JWT Token তৈরি করা
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" } // টোকেনের মেয়াদ ১ দিন
+    );
+
+    // ৫. লগইন সফল হলে টোকেন এবং ইউজারের তথ্য পাঠানো
+    res.status(200).json({
+      status: "success",
+      message: "Login successful!",
+      token: token,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
 module.exports = {
   getAllUser,
   getSingleUser,
   createUser,
   updateUser,
   deleteUser,
+  loginUser,
 };

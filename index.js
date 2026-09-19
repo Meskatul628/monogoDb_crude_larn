@@ -1,8 +1,9 @@
-require("dotenv").config();
+require("dotenv").config({ override: true });
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const userRouter = require("./routes/user.route");
+const noteRouter = require("./routes/note.route");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,6 +16,7 @@ app.set("json spaces", 2);
 
 // Routes
 app.use("/api/v1", userRouter);
+app.use("/api/v1", noteRouter);
 
 app.get("/", (req, res) => {
   res.send("Server is running & ready!");
