@@ -21,6 +21,18 @@ const userSchema = new mongoose.Schema(
       minlength: [6, "Password must be at least 6 characters long"],
       select: false, // Security: By default query result-এ পাসওয়ার্ড আসবে না
     },
+    isVerified: {
+      type: Boolean,
+      default: false, // রেজিস্ট্রেশনের সময় By default false থাকবে
+    },
+    otp: {
+      type: String,
+      select: false, // Security: By default query result-এ OTP প্রকাশ পাবে না
+    },
+    otpExpires: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true, // createdAt and updatedAt automatically managed

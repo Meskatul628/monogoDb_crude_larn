@@ -7,7 +7,9 @@ const {
   updateUser, 
   deleteUser,
   loginUser,
-  refreshTokenController
+  refreshTokenController,
+  verifyOtpController,
+  resendOtpController
 } = require("../controller/controller.user");
 
 const router = express.Router();
@@ -17,6 +19,8 @@ router.get("/user/:id", getSingleUser);
 router.post("/user", createUser);
 router.post("/user/login", loginUser);
 router.post("/user/refresh-token", refreshTokenController);
+router.post("/user/verify-otp", verifyOtpController);
+router.post("/user/resend-otp", resendOtpController);
 
 router.put("/user/:id", updateUser);
 
