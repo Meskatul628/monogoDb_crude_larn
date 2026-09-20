@@ -114,45 +114,99 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // ২. ডেটাবেজে এই ইমেইল দিয়ে ইউজার আছে কিনা চেক
-    const user = await User.findOne({ email });
+    // ২. ডেটাবেজে ইউজার সন্ধান এবং পাসওয়ার্ড সিলেক্ট করা (যেহেতু Schema-তে select: false আছে)
+    const user = await User.findOne({ email }).select("+password");
 
-    if (!user) {
-      return res.status(404).json({
-        status: "error",
-        message: "User not found with this email",
-      });
-    }
+    // ৩. ইউজার অস্তিত্ব এবং পাসওয়ার্ড হ্যাশ যাচাই করা
+    const isPasswordValid = user ? await user.comparePassword(password) : false;
 
-    // ৩. পাসওয়ার্ড মিলছে কিনা যাচাই
-    if (user.password !== password) {
+    if (!user || !isPasswordValid) {
       return res.status(401).json({
         status: "error",
-        message: "Invalid password",
+        message: "Invalid email or password",
       });
     }
 
-    // ৪. JWT Token তৈরি করা
-    const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" } // টোকেনের মেয়াদ ১ দিন
+    // ৪. Access Token এবং Refresh Token তৈরি করা
+    // Access Token (১৫ মিনিট মেয়াদী - রেগুলার API কলের জন্য)
+    const accessToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+      { expiresIn: "15m" }
     );
 
-    // ৫. লগইন সফল হলে টোকেন এবং ইউজারের তথ্য পাঠানো
+    // Refresh Token (৭ দিন মেয়াদী - Access Token Expire হলে নতুন টোকেন নেওয়ার জন্য)
+    const refreshToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // ৫. লগইন সফল হলে Access Token, Refresh Token এবং ইউজারের তথ্য পাঠানো
     res.status(200).json({
       status: "success",
       message: "Login successful!",
-      token: token,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
       data: {
         id: user._id,
         name: user.name,
         email: user.email,
       },
     });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+
+// 7. REFRESH TOKEN CONTROLLER (Access Token Expire হলে নতুন Access Token জেনারেট করার জন্য)
+const refreshTokenController = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    // ১. ক্লায়েন্ট রিকোয়েস্টে Refresh Token পাঠিয়েছে কিনা যাচাই
+    if (!refreshToken) {
+      return res.status(401).json({
+        status: "error",
+        message: "Refresh token is required",
+      });
+    }
+
+    // ২. Refresh Token টি ভ্যালিড এবং মেয়াদের মধ্যে আছে কিনা চেক করা
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(403).json({
+            status: "error",
+            message: "Invalid or expired refresh token. Please login again.",
+          });
+        }
+
+        // ৩. টোকেন থেকে পাওয়া ইউজার আইডি দিয়ে ইউজার চেক করা
+        const user = await User.findById(decoded.id);
+        if (!user) {
+          return res.status(404).json({
+            status: "error",
+            message: "User not found",
+          });
+        }
+
+        // ৪. ইউজার সঠিক হলে নতুন Access Token (15m) জেনারেট করে পাঠানো
+        const newAccessToken = jwt.sign(
+          { id: user._id, email: user.email },
+          process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET,
+          { expiresIn: "15m" }
+        );
+
+        res.status(200).json({
+          status: "success",
+          message: "New access token generated successfully",
+          accessToken: newAccessToken,
+        });
+      }
+    );
   } catch (error) {
     res.status(500).json({ status: "error", message: error.message });
   }
@@ -165,4 +219,5 @@ module.exports = {
   updateUser,
   deleteUser,
   loginUser,
+  refreshTokenController,
 };

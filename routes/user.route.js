@@ -6,7 +6,8 @@ const {
   createUser, 
   updateUser, 
   deleteUser,
-  loginUser 
+  loginUser,
+  refreshTokenController
 } = require("../controller/controller.user");
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.get("/user", getAllUser);
 router.get("/user/:id", getSingleUser);
 router.post("/user", createUser);
 router.post("/user/login", loginUser);
+router.post("/user/refresh-token", refreshTokenController);
 
 router.put("/user/:id", updateUser);
 

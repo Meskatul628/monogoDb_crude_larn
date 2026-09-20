@@ -16,8 +16,9 @@ const authMiddleware = (req, res, next) => {
     // ২. 'Bearer <token>' থেকে মূল টোকেনটি আলাদা করা
     const token = authHeader.split(" ")[1];
 
-    // ৩. টোকেনটি ভ্যালিড কিনা যাচাই করা
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // ৩. টোকেনটি ভ্যালিড কিনা যাচাই করা (JWT_ACCESS_SECRET দিয়ে)
+    const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+    const decoded = jwt.verify(token, secret);
 
     // ৪. ডিকোড করা ইউজারের তথ্য (id, email) req.user এ যুক্ত করা
     req.user = decoded;
